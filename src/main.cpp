@@ -8,6 +8,7 @@ class Pad {
         Sound sound;
         Texture2D baseTexture, hitTexture;
         int posX, posY, id;
+        bool pressed;
 
     public:
         static int padCount;
@@ -21,6 +22,8 @@ class Pad {
             this->posY = posY;
             id = padCount;
             padCount++;
+
+            pressed = false;
         }
 
         Pad() {
@@ -32,6 +35,8 @@ class Pad {
             this->posY = 0;
             id = padCount;
             padCount++;
+
+            pressed = false;
         }
 
         ~Pad() {
@@ -40,6 +45,10 @@ class Pad {
         
         int getId() {
             return id;
+        }
+
+        bool getPressed() {
+            return pressed;
         }
 
         Vector2 getPadPosition() {
@@ -51,16 +60,23 @@ class Pad {
             this->sound = LoadSound(sound.c_str());
         }
 
+        void setPressed(bool pressed) {
+            if(pressed)
+                PlaySound(sound);
+
+            this->pressed = pressed;
+        }
+
         void playSound() {
             PlaySound(sound);
         }
 
-        void renderPad(bool hit) {
+        void renderPad() {
             Rectangle sourceRec = { 0.0f, 0.0f, (float)baseTexture.width, (float)baseTexture.height };
             Rectangle destRec = {posX, posY, 100.0f, 100.0f };
             Vector2 origin = { 0.0f, 0.0f };
 
-            DrawTexturePro(hit ? hitTexture : baseTexture, sourceRec, destRec, origin, 0.0f, WHITE);
+            DrawTexturePro((this->pressed) ? hitTexture : baseTexture, sourceRec, destRec, origin, 0.0f, WHITE);
         }
 };
 
@@ -85,18 +101,18 @@ int main() {
             Vector2 mousePos;
             Vector2 padPos = p->getPadPosition();
 
-            if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-                std::cout << "<sensex::input> MOUSE_LEFT pressed." << std::endl;
+            if(IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !p->getPressed()) {
                 mousePos = GetMousePosition();
                 DrawRectangle(mousePos.x, mousePos.y, 2, 2, WHITE);
 
-                if((mousePos.x >= padPos.x && mousePos.x <= padPos.x + 100.0f) && (mousePos.x >= padPos.y && mousePos.y <= padPos.y + 100.0f)) {
-                    p->renderPad(true);
-                    p->playSound();
-                }
+                if((mousePos.x >= padPos.x && mousePos.x <= padPos.x + 100.0f) && (mousePos.x >= padPos.y && mousePos.y <= padPos.y + 100.0f))
+                    p->setPressed(true);
             }
-            else
-                p->renderPad(false);
+
+            else if(!IsMouseButtonDown(MOUSE_BUTTON_LEFT) && p->getPressed())
+                p->setPressed(false);
+
+            p->renderPad();
         }
 
         EndDrawing();
